@@ -1446,4 +1446,36 @@ Rules: Execute on 5-min close with volume confirmation.`;
     });
   </script>
 </body>
+  // Auto-fetch updated cloud data on page load and every 60 seconds
+async function loadLiveMarketData() {
+  try {
+    const res = await fetch('./data.json?cache_bust=' + new Date().getTime());
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    // Update live timestamp on screen
+    if (data.timestamp && document.getElementById('marketTimeIST')) {
+      document.getElementById('marketTimeIST').innerText = data.timestamp;
+    }
+    
+    // Auto-fill values if available
+    if (data.global.us_sp500 && document.getElementById('usCloseVal')) {
+      document.getElementById('usCloseVal').value = data.global.us_sp500.pct;
+    }
+    if (data.global.asia_nikkei && document.getElementById('asiaVal')) {
+      document.getElementById('asiaVal').value = data.global.asia_nikkei.pct;
+    }
+    
+    // Trigger bias calculation
+    if (typeof updateCalculations === 'function') {
+      updateCalculations();
+    }
+  } catch (err) {
+    console.log("No cloud data.json found yet, using defaults:", err);
+  }
+}
+
+// Initial load + periodic refresh
+loadLiveMarketData();
+setInterval(loadLiveMarketData, 60000);
 </html>
